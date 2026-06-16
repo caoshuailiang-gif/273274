@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# 数据与结果（通常体积大，不入库）
+data/raw/
+data/processed/
+results/
+*.h5ad
+*.h5
+*.loom
+*.mtx
+*.mtx.gz
+
+# 图表输出
+figures/
+
+# 系统
+.DS_Store

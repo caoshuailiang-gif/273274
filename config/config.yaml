@@ -1,0 +1,65 @@
+# ============================================================
+# 单细胞 RNA-seq 分析工作流配置
+# 所有步骤的参数集中在此处管理，便于复现与调参
+# ============================================================
+
+# ---------- 输入 / 输出 ----------
+io:
+  # 输入数据，支持以下格式（按扩展名自动识别）：
+  #   - 10x mtx 目录（含 matrix.mtx / barcodes.tsv / features.tsv）
+  #   - 10x h5 文件 (.h5)
+  #   - AnnData 文件 (.h5ad)
+  #   - csv / tsv 表达矩阵（行=基因或细胞，由 transpose 控制）
+  input: data/raw/pbmc3k
+  # csv/tsv 时是否转置（scanpy 约定 obs=细胞 × var=基因）
+  transpose: false
+  # 结果输出目录
+  output_dir: results
+  # 图表输出目录
+  figures_dir: figures
+  # 样本/项目名，用于输出文件前缀
+  sample_name: sample
+
+# ---------- 质量控制 (QC) ----------
+qc:
+  # 线粒体基因前缀（人 "MT-"，鼠 "mt-"）
+  mito_prefix: "MT-"
+  # 核糖体基因前缀
+  ribo_prefix: ["RPS", "RPL"]
+  # 过滤阈值
+  min_genes: 200        # 每个细胞至少表达的基因数
+  min_cells: 3          # 每个基因至少在多少细胞中表达
+  max_genes: 6000       # 每个细胞最多基因数（去除潜在双细胞）
+  max_pct_mito: 20.0    # 线粒体基因比例上限 (%)
+  # 是否检测并标记双细胞（需要 scrublet）
+  detect_doublets: true
+
+# ---------- 标准化与特征选择 ----------
+preprocess:
+  # 每个细胞归一化到的总计数
+  target_sum: 10000
+  # 是否做 log1p 转换
+  log1p: true
+  # 高变基因
+  n_top_genes: 2000
+  hvg_flavor: seurat_v3   # seurat / seurat_v3 / cell_ranger
+  # 是否回归掉总计数与线粒体比例
+  regress_out: false
+  # 标准化后裁剪的最大值
+  scale_max_value: 10
+
+# ---------- 降维 / 邻接图 / 聚类 ----------
+cluster:
+  n_pcs: 50              # PCA 主成分数
+  n_neighbors: 15        # 邻接图近邻数
+  # 批次整合：none / harmony（需要 harmonypy）
+  batch_correction: none
+  batch_key: batch       # batch_correction=harmony 时使用的 obs 列
+  # Leiden 聚类分辨率，越大簇越多
+  leiden_resolution: 1.0
+  random_state: 0
+
+# ---------- 标记基因 / 差异表达 ----------
+markers:
+  method: wilcoxon       # wilcoxon / t-test / logreg
+  n_genes: 25            # 每个簇导出的 top 标记基因数
