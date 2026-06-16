@@ -2,3 +2,7 @@
 __pycache__/
 *.py[cod]
 .cache/
+.venv/
+results_run.log
+*.cache
+results/cluster_markers.csv
