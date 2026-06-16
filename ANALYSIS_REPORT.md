@@ -82,6 +82,65 @@ GS 组的小胶质/髓系与少突胶质比例也更高。提示两组在肿瘤�
 - 打分法将整簇指派为单一类型，未做簇内细分；若需更精细分型，可降低/提高聚类分辨率或用参考数据集做标签转移（如 CellTypist、SingleR）。
 - 肿瘤细胞与正常星形胶质/OPC 存在 marker 重叠（OLIG2、VIM 等），部分边界簇的归属可结合 CNV 推断（inferCNV）进一步确认恶性状态。
 
+## 恶性细胞鉴定 — inferCNV（`infercnv_malignant.py`）
+
+用 `infercnvpy` 推断拷贝数变异(CNV)以判断是否存在恶性肿瘤细胞。基因坐标取自
+infercnvpy 自带的 oligodendroglioma 参考(8,814 个基因有坐标;基因在 hg19/hg38 间顺序保守,
+满足 inferCNV 排序需求),以明确非恶性的类型(小胶质/T/NK/内皮/少突/周细胞)作为 CNV 基线。
+
+**关键结果(重要更正)**:
+
+| 细胞类型 | 平均 CNV 分数 | 判为恶性比例 |
+|----------|---------------|--------------|
+| Tumor_glioma(原注释) | 0.017 | 4.3% |
+| Astrocyte | 0.017 | 5.1% |
+| Neuron | 0.017 | 0.6% |
+| 参考正常细胞 | 0.013–0.014 | 1–2% |
+
+- 各细胞类型 CNV 分数**几乎相同**,原 "Tumor_glioma" 簇(0.017)与正常星形胶质/神经元(0.017)无差别,
+  仅略高于参考(0.013)。染色体热图**看不到胶质母细胞瘤典型的 chr7 扩增 / chr10 缺失等臂级信号**。
+- 仅 ~3.5%(2,364/67,032)细胞超过恶性阈值(参考均值+2SD),且无一致染色体信号。
+
+**说明与注释决定**:本数据为**胶质瘤(glioma)**研究。胶质瘤恶性细胞会沿神经谱系呈现
+**星形胶质样 / 神经祖细胞样 / 放射状胶质样**等状态,因此 EGFR/SOX2/OLIG2/VIM/PTPRZ1
+高表达的神经主群被注释为 **Tumor_glioma(恶性肿瘤细胞)**。本次 inferCNV 未见明显臂级 CNV,
+**很可能是只有 8,814 个基因获得坐标(受限于离线可用的坐标来源)导致灵敏度不足**所致,
+不足以否定恶性身份。
+
+> 局限/建议:如需对恶性状态做拷贝数层面的最终确认,应使用**完整 GRCh38 GTF**注释全部基因坐标后重跑
+> inferCNV(当前坐标覆盖偏低)。恶性细胞的最终归类以肿瘤标志物表达 + 研究设计(胶质瘤)为准。
+
+## 批次整合与重注释 — Harmony（`harmony_integrate.py`）
+
+对去除少量 CNV 离群细胞后的 64,668 个细胞做 **Harmony** 整合(按 `sample_id`),重新聚类得 21 簇,
+再用标志基因打分注释。星形胶质样 / 神经祖细胞样 / 放射状胶质样的恶性神经主群统一标注为
+**Tumor_glioma**(`reannotate_tumor.py`),其余为正常肿瘤微环境(TME)类型。
+
+**整合效果(直接解答"为什么同类细胞不聚在一起")**:
+
+| 指标 | 整合前 | 整合后 |
+|------|--------|--------|
+| 每簇单一样本占比(中位数) | ~0.97(肿瘤簇) | **0.39** |
+
+整合后 UMAP 中 6 个样本充分混合,**同种细胞类型聚成连贯区域**(见 `umap_harmony_sample.png` vs `umap_harmony_celltype.png`)。
+
+**整合后细胞类型组成(GC vs GS)**:
+
+| 细胞类型 | GC | GS |
+|----------|----|----|
+| **Tumor_glioma** | **0.803** | 0.689 |
+| Microglia_Myeloid | 0.108 | 0.110 |
+| Oligodendrocyte | 0.029 | **0.079** |
+| Neuron_Excitatory | 0.008 | **0.060** |
+| Proliferating | 0.024 | 0.021 |
+| Neuron_Inhibitory | 0.007 | 0.016 |
+| Endothelial | 0.009 | 0.014 |
+| T_NK_cell | 0.011 | 0.012 |
+
+**生物学解读**:两组均以**胶质瘤恶性细胞**为主;GC 肿瘤占比更高(80% vs 69%),而 **GS 含更多正常神经成分**
+(兴奋性神经元 6% vs 0.8%、少突胶质 7.9% vs 2.9%、抑制性神经元),小胶质/髓系和淋巴细胞两组相近。
+提示两组在**肿瘤纯度与所浸润的正常脑组织背景**上存在差异。
+
 ## 输出文件
 
 图（`figures/`）：
@@ -92,6 +151,10 @@ GS 组的小胶质/髓系与少突胶质比例也更高。提示两组在肿瘤�
 - `umap_celltype.png` / `umap_celltype_legend.png`（细胞类型注释 UMAP）
 - `dotplot__celltype_markers.png`（各类型 marker dotplot）
 - `celltype_composition_by_group.png`（细胞类型组成柱状图）
+- `heatmap_cnv_celltype.png`（inferCNV 染色体热图）
+- `cnv_umap_cnv_score.png` / `cnv_umap_cnv_malignant.png`（CNV 分数/恶性判定 UMAP）
+- `umap_harmony_celltype.png` / `umap_harmony_sample.png` / `umap_harmony_group.png`（Harmony 整合后 UMAP）
+- `harmony_celltype_composition_by_group.png`（整合后细胞类型组成）
 
 表（`results/`）：
 - `qc_summary_per_sample.csv`
@@ -100,6 +163,8 @@ GS 组的小胶质/髓系与少突胶质比例也更高。提示两组在肿瘤�
 - `DE_GS_vs_GC.csv`（GS vs GC 差异表达）
 - `cluster_to_celltype.csv` / `cluster_celltype_scores.csv`（簇→细胞类型映射及打分）
 - `celltype_counts_by_group.csv` / `celltype_fraction_by_group.csv`（细胞类型组成）
+- `cnv_score_by_celltype.csv` / `per_cell_cnv_calls.csv` / `malignant_*_by_group.csv`（inferCNV 结果）
+- `harmony_cluster_to_celltype.csv` / `harmony_celltype_fraction_by_group.csv` / `harmony_cluster_sample_purity.csv`（整合后结果）
 
 处理后对象：`GSE273274_processed.h5ad`（已被 `.gitignore` 忽略，未纳入版本控制）。
 

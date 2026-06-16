@@ -1,0 +1,9 @@
+cell_type,GC,GS
+Endothelial,312,428
+Microglia_Myeloid,3607,3439
+Neuron_Excitatory,268,1885
+Neuron_Inhibitory,222,492
+Oligodendrocyte,968,2471
+Proliferating,808,668
+T_NK_cell,365,369
+Tumor_glioma,26730,21636
