@@ -7,3 +7,7 @@ results_run.log
 *.cache
 results/cluster_markers.csv
 annotate.log
+infercnv.log
+harmony.log
+GSE273274_integrated.h5ad
+.pybiomart.sqlite

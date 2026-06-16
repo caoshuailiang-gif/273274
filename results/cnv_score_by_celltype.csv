@@ -1,0 +1,9 @@
+cell_type,n,mean_cnv_score,pct_malignant
+Astrocyte,13460,0.017,5.059
+Endothelial,515,0.014,1.942
+Microglia_Myeloid,5096,0.013,1.099
+Neuron,9630,0.017,0.633
+Oligodendrocyte,3544,0.013,2.032
+Pericyte_Mural,263,0.015,4.563
+T_NK_cell,712,0.014,2.247
+Tumor_glioma,33812,0.017,4.306
