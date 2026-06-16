@@ -6,3 +6,4 @@ __pycache__/
 results_run.log
 *.cache
 results/cluster_markers.csv
+annotate.log

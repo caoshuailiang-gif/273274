@@ -44,6 +44,44 @@
 - 线粒体比例整体较低（中位 <2%），细胞质量良好。
 - 簇与分组高度耦合，提示存在较强的批次/分组效应。若关注**跨组保守的细胞类型**，建议加入批次整合（如 Harmony / scVI），当前流程仅用 HVG 的 `batch_key` 做了弱校正。
 
+## 细胞类群注释（`annotate_celltypes.py`）
+
+采用**基于 marker 基因的打分法**（`sc.tl.score_genes`）：对脑/胶质瘤组织 11 套经典 marker
+基因集逐细胞打分，再按每个 Leiden 簇的平均分取最高者指派细胞类型。
+
+**28 个簇 → 9 种细胞类型**：
+
+| 细胞类型 | Leiden 簇 | 代表 marker |
+|----------|-----------|-------------|
+| Tumor_glioma（肿瘤细胞） | 0,1,2,5,7,10,13,14,17,24,25,26,27 | EGFR, SOX2, OLIG2, PTPRZ1, VIM |
+| Astrocyte（星形胶质） | 8,16,21,23 | GFAP, AQP4, SLC1A3, ALDH1L1 |
+| Neuron（神经元） | 9,11,15,19,20,22 | SNAP25, SYT1, RBFOX3, STMN2 |
+| Microglia_Myeloid（小胶质/髓系） | 3 | PTPRC, AIF1, CSF1R, P2RY12, C1Q |
+| Oligodendrocyte（少突胶质） | 6 | PLP1, MBP, MOG, MAG |
+| Endothelial（内皮） | 4 | CLDN5, PECAM1, VWF, FLT1 |
+| Pericyte_Mural（周细胞） | 18 | RGS5, PDGFRB, NOTCH3 |
+| T_NK_cell（T/NK） | 12 | CD3D, CD3E, CD8A, NKG7 |
+
+**各细胞类型在两组中的比例**：
+
+| 细胞类型 | GC | GS |
+|----------|----|----|
+| Tumor_glioma | 0.393 | **0.617** |
+| Astrocyte | **0.335** | 0.066 |
+| Neuron | 0.170 | 0.117 |
+| Microglia_Myeloid | 0.057 | 0.095 |
+| Oligodendrocyte | 0.026 | 0.080 |
+| T_NK_cell | 0.010 | 0.011 |
+| Endothelial | 0.006 | 0.010 |
+| Pericyte_Mural | 0.003 | 0.005 |
+
+**关键差异**：GS 组**肿瘤细胞占比显著升高**（62% vs 39%），而 GC 组**星形胶质细胞占比明显更高**（34% vs 7%）；
+GS 组的小胶质/髓系与少突胶质比例也更高。提示两组在肿瘤负荷与微环境组成上存在系统性差异。
+
+**注释方法的局限**：
+- 打分法将整簇指派为单一类型，未做簇内细分；若需更精细分型，可降低/提高聚类分辨率或用参考数据集做标签转移（如 CellTypist、SingleR）。
+- 肿瘤细胞与正常星形胶质/OPC 存在 marker 重叠（OLIG2、VIM 等），部分边界簇的归属可结合 CNV 推断（inferCNV）进一步确认恶性状态。
+
 ## 输出文件
 
 图（`figures/`）：
@@ -51,12 +89,17 @@
 - `violin_qc_pre.png`（过滤前 QC 小提琴图）
 - `rank_genes_groups_leiden_markers.png`（各簇 marker）
 - `cluster_composition_by_group.png`（簇组成柱状图）
+- `umap_celltype.png` / `umap_celltype_legend.png`（细胞类型注释 UMAP）
+- `dotplot__celltype_markers.png`（各类型 marker dotplot）
+- `celltype_composition_by_group.png`（细胞类型组成柱状图）
 
 表（`results/`）：
 - `qc_summary_per_sample.csv`
 - `cluster_markers.csv` / `top10_markers_per_cluster.csv`
 - `cluster_counts_by_group.csv` / `cluster_fraction_by_group.csv`
 - `DE_GS_vs_GC.csv`（GS vs GC 差异表达）
+- `cluster_to_celltype.csv` / `cluster_celltype_scores.csv`（簇→细胞类型映射及打分）
+- `celltype_counts_by_group.csv` / `celltype_fraction_by_group.csv`（细胞类型组成）
 
 处理后对象：`GSE273274_processed.h5ad`（已被 `.gitignore` 忽略，未纳入版本控制）。
 
